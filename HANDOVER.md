@@ -8,6 +8,11 @@ The active main sketch is:
 
 - `projectSMMS-CellularMQTT.ino`
 
+Additional split sketches now exist:
+
+- `CellularOTA/CellularOTA.ino`: OTA-capable 5-minute sleep sketch.
+- `projectSMMS-CellularMQTT-NoOTA/projectSMMS-CellularMQTT-NoOTA.ino`: preserved non-OTA 5-minute sleep sketch.
+
 It currently runs in low-power cycle mode:
 
 1. Boot ESP32.
@@ -53,6 +58,8 @@ Important LilyGo pins:
 ## File Map
 
 - `projectSMMS-CellularMQTT.ino`: active 5-minute sleep-mode sketch.
+- `CellularOTA/`: self-contained Arduino sketch copy with HTTP-over-cellular OTA support.
+- `projectSMMS-CellularMQTT-NoOTA/`: self-contained Arduino sketch copy without OTA support.
 - `15sec_StaysON/projectSMMS-CellularMQTT-15sec_StaysON.ino`: backup always-on 15-second sketch.
 - `Config.h`: MQTT, APN, intervals, ADC constants, payload size.
 - `utilities.h`: LilyGo T-A7670 board pin definitions.
@@ -100,6 +107,11 @@ Before sleep, it also calls:
 If the modem should remain powered during ESP32 sleep, remove or change `modem.poweroff()` in `sleepUntilNextSend()` inside `projectSMMS-CellularMQTT.ino`.
 
 ## Known Caveats
+
+The `CellularOTA` sketch uses first-pass plain HTTP OTA. Configure `OTA_HOST`,
+`OTA_VERSION_PATH`, and `OTA_BINARY_PATH` in `CellularOTA/Config.h` before using
+it in the field, and select an ESP32 partition scheme with OTA app slots in
+Arduino IDE.
 
 This environment did not have `arduino-cli`, PlatformIO, or `git` on PATH, so the sketch has not been compiled from this shell.
 
