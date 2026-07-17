@@ -45,6 +45,8 @@ void sleepUntilNextSend()
         modem.poweroff();
     }
 
+    setSensorPowerEnabled(false);
+    holdSensorPowerOffDuringSleep();
     esp_sleep_enable_timer_wakeup(DEEP_SLEEP_INTERVAL_US);
     SerialMon.flush();
     esp_deep_sleep_start();
@@ -65,6 +67,8 @@ void setup()
 
     configureBoardPins();
     holdBatteryPowerRail();
+    setSensorPowerEnabled(true);
+    delay(50);
     configureAnalogInputs();
     beginAds1115();
 

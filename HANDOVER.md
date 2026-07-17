@@ -50,6 +50,7 @@ Important LilyGo pins:
 - Modem PWRKEY: GPIO 4
 - Modem RESET: GPIO 5
 - Battery power rail enable: GPIO 12
+- Switched sensor power enable: GPIO 32
 - Battery ADC: GPIO 35
 - Solar ADC: GPIO 36
 - I2C SDA: GPIO 21
@@ -92,9 +93,16 @@ The JSON payload includes:
 
 Battery operation depends on `BOARD_POWERON_PIN` / GPIO 12 being set HIGH early at boot. This is implemented in `BoardPower.h`.
 
+External sensor power is controlled by `BOARD_SENSOR_POWER_EN_PIN` / GPIO 32. It is active-high:
+
+- GPIO 32 LOW: sensor power disabled.
+- GPIO 32 HIGH: sensor power enabled for ADS1115/sensor setup, data collection, and publish.
+- Before deep sleep, `sleepUntilNextSend()` calls `setSensorPowerEnabled(false)` and `holdSensorPowerOffDuringSleep()` so GPIO 32 is held LOW through ESP32 deep sleep.
+
 The active sketch calls:
 
 - `holdBatteryPowerRail()`
+- `setSensorPowerEnabled(true)`
 - `esp_sleep_enable_timer_wakeup(DEEP_SLEEP_INTERVAL_US)`
 - `esp_deep_sleep_start()`
 
@@ -103,25 +111,29 @@ Before sleep, it also calls:
 - `mqtt.disconnect()`
 - `modem.gprsDisconnect()`
 - `modem.poweroff()`
+- `setSensorPowerEnabled(false)`
+- `holdSensorPowerOffDuringSleep()`
 
 If the modem should remain powered during ESP32 sleep, remove or change `modem.poweroff()` in `sleepUntilNextSend()` inside `projectSMMS-CellularMQTT.ino`.
 
 ## Known Caveats
+
+If GPIO 32 still measures above 0 V during deep sleep after firmware upload, check the hardware. Likely causes are a missing pulldown on the MOSFET/load-switch enable line or backfeed through I2C pullups/sensor protection diodes. Add a physical pulldown, typically 100k to GND, and make sure switched sensors are not being powered indirectly through SDA/SCL.
 
 The `CellularOTA` sketch uses first-pass plain HTTP OTA. Configure `OTA_HOST`,
 `OTA_VERSION_PATH`, and `OTA_BINARY_PATH` in `CellularOTA/Config.h` before using
 it in the field, and select an ESP32 partition scheme with OTA app slots in
 Arduino IDE.
 
-This environment did not have `arduino-cli`, PlatformIO, or `git` on PATH, so the sketch has not been compiled from this shell.
+This environment did not have `arduino-cli` or PlatformIO on PATH, so the sketch has not been compiled from this shell. `git` is available.
 
 The code was checked against the local reference project:
 
-- `C:\Users\jared salazar\OneDrive\Documents\GitHub\projectSapat-ClientMQTT`
+- `F:\GitHub\projectSapat-ClientMQTT`
 
 And LilyGo reference repo:
 
-- `C:\Users\jared salazar\OneDrive\Documents\GitHub\LilyGo-Modem-Series`
+- `F:\GitHub\LilyGo-Modem-Series`
 
 The TinyGSM fork from LilyGo is required. The sketch intentionally keeps this guard:
 

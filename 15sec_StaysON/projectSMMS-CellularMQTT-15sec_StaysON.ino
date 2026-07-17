@@ -24,8 +24,11 @@ void setup()
 
     configureBoardPins();
     holdBatteryPowerRail();
+    setSensorPowerEnabled(true);
+    delay(50);
     configureAnalogInputs();
     beginAds1115();
+    setSensorPowerEnabled(false);
 
     powerOnModem();
     modemReady = initializeModem();
@@ -47,10 +50,14 @@ void loop()
 
     const uint32_t now = millis();
     if (mqtt.connected() && (lastPublish == 0 || now - lastPublish >= PUBLISH_INTERVAL_MS)) {
+        setSensorPowerEnabled(true);
+        delay(50);
+        beginAds1115();
         const SensorReadings sensors = readSensors();
         const GpsFix gps = readGpsFix();
         const int rssi = readRssi();
         publishTelemetry(buildTelemetryPayload(sensors, gps, rssi));
+        setSensorPowerEnabled(false);
         lastPublish = now;
     }
 

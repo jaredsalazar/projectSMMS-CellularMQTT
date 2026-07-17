@@ -14,6 +14,8 @@
 #define MODEM_RESET_PIN                 (5)
 #define BOARD_BAT_ADC_PIN               (35)
 #define BOARD_SOLAR_ADC_PIN             (36)
+#define BOARD_SENSOR_POWER_EN_PIN       (32)
+#define BOARD_SENSOR_POWER_EN_LEVEL     HIGH
 #define MODEM_RESET_LEVEL               HIGH
 #define BOARD_SDA_PIN                   (21)
 #define BOARD_SCL_PIN                   (22)
