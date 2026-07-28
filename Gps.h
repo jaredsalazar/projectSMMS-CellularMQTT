@@ -6,6 +6,7 @@
 #include "ModemMqtt.h"
 
 struct GpsFix {
+    // valid stays false when GPS is disabled or no usable satellite fix exists.
     bool valid;
     float latitude;
     float longitude;
@@ -21,6 +22,7 @@ GpsFix lastGpsFix = {};
 void initializeGps()
 {
 #ifdef TINY_GSM_MODEM_HAS_GPS
+    // Some modems need a GPIO level to enable GPS; others use a simple AT command.
     if (MODEM_GPS_ENABLE_GPIO >= 0 && MODEM_GPS_ENABLE_LEVEL >= 0) {
         gpsEnabled = modem.enableGPS(MODEM_GPS_ENABLE_GPIO, MODEM_GPS_ENABLE_LEVEL);
     } else {
@@ -45,6 +47,7 @@ GpsFix readGpsFix()
         return lastGpsFix;
     }
 
+    // Avoid hammering the modem GPS parser when several payload fields ask for a fix.
     if (lastGpsFix.updatedAtMs != 0 && millis() - lastGpsFix.updatedAtMs < GPS_REFRESH_INTERVAL_MS) {
         return lastGpsFix;
     }
@@ -62,6 +65,7 @@ GpsFix readGpsFix()
                                  &visibleSatellites, &usedSatellites, &accuracy);
 
     lastGpsFix.updatedAtMs = millis();
+    // A modem response is only treated as a real location when satellites were used.
     if (ok && status > 0 && usedSatellites > 0) {
         lastGpsFix.valid = true;
         lastGpsFix.latitude = latitude;

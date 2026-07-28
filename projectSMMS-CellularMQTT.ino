@@ -5,10 +5,12 @@
 #include "ModemMqtt.h"
 #include "Gps.h"
 #include "Telemetry.h"
+#include "DataLogger.h"
 #include "esp_sleep.h"
 
 bool modemReady = false;
 
+// Waits for MQTT while also keeping the cellular data connection alive.
 bool waitForMqttConnection()
 {
     const uint32_t started = millis();
@@ -19,22 +21,32 @@ bool waitForMqttConnection()
     return mqtt.connected();
 }
 
+// One wake cycle publishes exactly one telemetry message, then the board sleeps.
 bool publishOnce()
 {
-    if (!waitForMqttConnection()) {
-        SerialMon.println("MQTT connect timed out; sleeping and retrying next cycle.");
+    const SensorReadings sensors = readSensors();
+    const GpsFix gps = modemReady ? readGpsFix() : lastGpsFix;
+    const int rssi = modemReady ? readRssi() : -999;
+    const char *payload = buildTelemetryPayload(sensors, gps, rssi);
+    appendMeasurementToSd(sensors, gps, rssi);
+
+    if (!modemReady) {
+        SerialMon.println("Modem not ready; measurement was logged but not sent.");
         return false;
     }
 
-    const SensorReadings sensors = readSensors();
-    const GpsFix gps = readGpsFix();
-    const int rssi = readRssi();
-    const bool published = publishTelemetry(buildTelemetryPayload(sensors, gps, rssi));
+    if (!waitForMqttConnection()) {
+        SerialMon.println("MQTT connect timed out; measurement was logged and will retry sending next cycle.");
+        return false;
+    }
+
+    const bool published = publishTelemetry(payload);
     mqtt.loop();
     delay(250);
     return published;
 }
 
+// Turns off the high-power parts and asks the ESP32 to wake itself in 5 minutes.
 void sleepUntilNextSend()
 {
     SerialMon.println("Preparing for 5 minute deep sleep.");
@@ -60,17 +72,23 @@ void setup()
     SerialMon.println();
     SerialMon.println("SMMS Cellular MQTT starting - 5min sleep mode");
     SerialMon.println(PRODUCT_MODEL_NAME);
+    SerialMon.print("Firmware version: ");
+    SerialMon.println(FIRMWARE_VERSION);
 
+    // Use the ESP32 chip ID so every board gets a stable MQTT/device identity.
     buildDeviceIdentity();
     SerialMon.print("Device ID: ");
     SerialMon.println(deviceId);
+    beginSdLogger();
 
+    // Bring up board rails first, then sensors, then the modem/network stack.
     configureBoardPins();
     holdBatteryPowerRail();
+    configureAnalogInputs();
     setSensorPowerEnabled(true);
     delay(50);
-    configureAnalogInputs();
     beginAds1115();
+    setSensorPowerEnabled(false);
 
     powerOnModem();
     modemReady = initializeModem();
@@ -78,11 +96,11 @@ void setup()
         ensureNetworkConnection(true);
         ensureGprsConnection();
         initializeGps();
-        publishOnce();
     } else {
         SerialMon.println("Modem init failed; sleeping and retrying next cycle.");
     }
 
+    publishOnce();
     sleepUntilNextSend();
 }
 

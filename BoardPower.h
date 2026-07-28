@@ -8,6 +8,7 @@
 void configureBoardPins()
 {
 #ifdef BOARD_POWERON_PIN
+    // This rail keeps the board powered from the battery path.
     gpio_hold_dis(static_cast<gpio_num_t>(BOARD_POWERON_PIN));
     pinMode(BOARD_POWERON_PIN, OUTPUT);
     digitalWrite(BOARD_POWERON_PIN, HIGH);
@@ -16,6 +17,7 @@ void configureBoardPins()
 #endif
 
 #ifdef BOARD_SENSOR_POWER_EN_PIN
+    // Sensors get their own active-low switched rail so deep sleep can save power.
     gpio_hold_dis(static_cast<gpio_num_t>(BOARD_SENSOR_POWER_EN_PIN));
     pinMode(BOARD_SENSOR_POWER_EN_PIN, OUTPUT);
     digitalWrite(BOARD_SENSOR_POWER_EN_PIN, !BOARD_SENSOR_POWER_EN_LEVEL);
@@ -24,6 +26,7 @@ void configureBoardPins()
 #endif
 
 #ifdef MODEM_RESET_PIN
+    // Reset the modem into a known state before trying to talk over SerialAT.
     pinMode(MODEM_RESET_PIN, OUTPUT);
     digitalWrite(MODEM_RESET_PIN, !MODEM_RESET_LEVEL);
     delay(100);
@@ -44,6 +47,7 @@ void configureBoardPins()
 void holdBatteryPowerRail()
 {
 #ifdef BOARD_POWERON_PIN
+    // GPIO hold keeps this pin high even after the ESP32 enters deep sleep.
     digitalWrite(BOARD_POWERON_PIN, HIGH);
     gpio_hold_en(static_cast<gpio_num_t>(BOARD_POWERON_PIN));
     gpio_deep_sleep_hold_en();
@@ -61,6 +65,7 @@ void setSensorPowerEnabled(bool enabled)
 void holdSensorPowerOffDuringSleep()
 {
 #ifdef BOARD_SENSOR_POWER_EN_PIN
+    // Hold the active-low sensor rail HIGH during deep sleep so external sensors stay off.
     digitalWrite(BOARD_SENSOR_POWER_EN_PIN, !BOARD_SENSOR_POWER_EN_LEVEL);
     gpio_hold_en(static_cast<gpio_num_t>(BOARD_SENSOR_POWER_EN_PIN));
     gpio_deep_sleep_hold_en();
@@ -69,6 +74,7 @@ void holdSensorPowerOffDuringSleep()
 
 void powerOnModem()
 {
+    // Cellular modems power on from a timed PWRKEY pulse, not a simple steady HIGH.
     digitalWrite(BOARD_PWRKEY_PIN, LOW);
     delay(100);
     digitalWrite(BOARD_PWRKEY_PIN, HIGH);

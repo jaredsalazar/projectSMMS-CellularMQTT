@@ -1,6 +1,6 @@
 #pragma once
 
-// LilyGo T-A7670 / A7670SA ESP32 board profile.
+// LilyGo T-A7670 / A7670SA ESP32 board profile: all pin mappings live here.
 #define LILYGO_T_A7670
 
 #if defined(LILYGO_T_A7670)
@@ -15,10 +15,14 @@
 #define BOARD_BAT_ADC_PIN               (35)
 #define BOARD_SOLAR_ADC_PIN             (36)
 #define BOARD_SENSOR_POWER_EN_PIN       (32)
-#define BOARD_SENSOR_POWER_EN_LEVEL     HIGH
+#define BOARD_SENSOR_POWER_EN_LEVEL     LOW
 #define MODEM_RESET_LEVEL               HIGH
 #define BOARD_SDA_PIN                   (21)
 #define BOARD_SCL_PIN                   (22)
+#define BOARD_SD_SCK_PIN                (18)
+#define BOARD_SD_MISO_PIN               (19)
+#define BOARD_SD_MOSI_PIN               (23)
+#define BOARD_SD_CS_PIN                 (13)
 #define MODEM_GPS_ENABLE_GPIO           (-1)
 #define MODEM_GPS_ENABLE_LEVEL          (-1)
 #define PRODUCT_MODEL_NAME              "LilyGo-T-A7670"

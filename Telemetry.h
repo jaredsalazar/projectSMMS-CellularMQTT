@@ -11,6 +11,7 @@ char telemetryPayload[TELEMETRY_PAYLOAD_SIZE];
 
 void buildDeviceIdentity()
 {
+    // Derive stable IDs from the chip MAC so multiple devices do not share one MQTT client ID.
     const uint64_t mac = ESP.getEfuseMac();
     const uint32_t chipId = static_cast<uint32_t>(mac);
     snprintf(deviceId, sizeof(deviceId), "smms-%08lX", static_cast<unsigned long>(chipId));
@@ -24,8 +25,9 @@ const char *boolText(bool value)
 
 const char *buildTelemetryPayload(const SensorReadings &sensors, const GpsFix &gps, int rssi)
 {
+    // Build one compact JSON document for the MQTT broker.
     snprintf(telemetryPayload, sizeof(telemetryPayload),
-             "{\"device_id\":\"%s\",\"uptime_ms\":%lu,"
+             "{\"device_id\":\"%s\",\"firmware_version\":\"%s\",\"uptime_ms\":%lu,"
              "\"battery_mv\":%lu,\"battery_percent\":%u,"
              "\"solar_mv\":%lu,\"solar_charging\":%s,"
              "\"rssi\":%d,"
@@ -38,6 +40,7 @@ const char *buildTelemetryPayload(const SensorReadings &sensors, const GpsFix &g
              "{\"channel\":3,\"raw\":%d,\"voltage\":%.3f}"
              "]}",
              deviceId,
+             FIRMWARE_VERSION,
              static_cast<unsigned long>(millis()),
              static_cast<unsigned long>(sensors.batteryMilliVolts),
              sensors.batteryPercent,

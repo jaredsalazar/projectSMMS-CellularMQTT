@@ -17,6 +17,7 @@ uint32_t lastReconnectAttempt = 0;
 
 bool initializeModem()
 {
+    // SerialAT is the ESP32 UART connected to the cellular modem.
     SerialAT.begin(MODEM_BAUDRATE, SERIAL_8N1, MODEM_RX_PIN, MODEM_TX_PIN);
 
     SerialMon.println("Starting modem...");
@@ -32,10 +33,12 @@ bool initializeModem()
     SerialMon.print("Modem Info: ");
     SerialMon.println(modem.getModemInfo());
 
+    // Unlock SIMs that require a PIN; blank GSM_PIN means no unlock is needed.
     if (strlen(GSM_PIN) > 0 && modem.getSimStatus() != 3) {
         modem.simUnlock(GSM_PIN);
     }
 
+    // PubSubClient settings must be sized before publishing the JSON payload.
     mqtt.setServer(MQTT_BROKER, MQTT_PORT);
     mqtt.setKeepAlive(30);
     mqtt.setSocketTimeout(30);
@@ -50,6 +53,7 @@ bool ensureNetworkConnection(bool forceWait = false)
         return true;
     }
 
+    // Network registration means the modem has attached to the cellular tower.
     SerialMon.print("Waiting for network...");
     if (!modem.waitForNetwork(NETWORK_TIMEOUT_MS, true)) {
         SerialMon.println(" fail");
@@ -66,6 +70,7 @@ bool ensureGprsConnection()
         return true;
     }
 
+    // GPRS/APN creates the IP data session used by MQTT.
     SerialMon.print("Connecting to APN ");
     SerialMon.print(APN);
     SerialMon.print(" ... ");
@@ -115,6 +120,7 @@ void maintainConnections(const char *clientId)
         return;
     }
 
+    // Reconnect attempts are rate-limited so a bad signal does not spin forever.
     const uint32_t now = millis();
     if (lastReconnectAttempt == 0 || now - lastReconnectAttempt >= MQTT_RECONNECT_INTERVAL_MS) {
         lastReconnectAttempt = now;
@@ -126,6 +132,7 @@ void maintainConnections(const char *clientId)
 
 int signalQualityToRssi(int16_t csq)
 {
+    // TinyGSM returns CSQ 0-31; convert it to approximate RSSI in dBm.
     if (csq < 0 || csq == 99 || csq > 31) {
         return -999;
     }

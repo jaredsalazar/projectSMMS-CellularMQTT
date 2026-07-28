@@ -4,14 +4,17 @@
 #include <Wire.h>
 #include "Config.h"
 #include "utilities.h"
+#include "BoardPower.h"
 
 struct AnalogChannelReading {
+    // ADS1115 raw count plus calculated voltage for one external analog input.
     int16_t raw;
     float voltage;
     bool ok;
 };
 
 struct SensorReadings {
+    // Everything needed to describe power state and the four ADS1115 channels.
     uint32_t batteryMilliVolts;
     uint8_t batteryPercent;
     uint32_t solarMilliVolts;
@@ -62,6 +65,7 @@ bool scanAds1115Address()
     SerialMon.println("Scanning I2C bus...");
 
     bool foundAds1115 = false;
+    // ADS1115 address depends on its ADDR pin, so check all legal addresses.
     for (uint8_t address = 0x48; address <= 0x4B; ++address) {
         Wire.beginTransmission(address);
         if (Wire.endTransmission() == 0) {
@@ -118,6 +122,7 @@ bool beginAds1115()
         return true;
     }
 
+    // Try common ESP32 I2C pin pairs in case the board wiring differs from the profile.
     const int fallbackPairs[][2] = {
         {21, 22},
         {22, 21},
@@ -143,6 +148,7 @@ bool readAds1115SingleEnded(uint8_t channel, AnalogChannelReading *reading)
         return false;
     }
 
+    // Single-shot mode starts one conversion for the selected analog channel.
     const uint16_t config = ADS1115_SINGLE_SHOT |
                             ADS1115_MUX_SINGLE_ENDED[channel] |
                             ADS1115_PGA_4096 |
@@ -156,6 +162,7 @@ bool readAds1115SingleEnded(uint8_t channel, AnalogChannelReading *reading)
 
     uint16_t status = 0;
     const uint32_t started = millis();
+    // Wait until the ADS1115 says conversion is complete, with a short timeout.
     do {
         delay(2);
         if (!readAds1115Register(ADS1115_CONFIG_REGISTER, &status)) {
@@ -190,6 +197,7 @@ uint32_t readScaledMilliVolts(uint8_t pin, float dividerRatio)
 {
 #if defined(ESP32)
     uint32_t totalMilliVolts = 0;
+    // Average several samples to reduce ADC noise, then undo the divider scaling.
     for (uint8_t i = 0; i < ADC_SAMPLE_COUNT; ++i) {
         totalMilliVolts += analogReadMilliVolts(pin);
         delay(5);
@@ -221,8 +229,13 @@ SensorReadings readSensors()
     readings.batteryPercent = batteryPercentFromMilliVolts(readings.batteryMilliVolts);
     readings.solarMilliVolts = readScaledMilliVolts(BOARD_SOLAR_ADC_PIN, SOLAR_DIVIDER_RATIO);
     readings.solarCharging = readings.solarMilliVolts > readings.batteryMilliVolts + SOLAR_CHARGING_MARGIN_MV;
+
+    // Pull the ADS1115 power enable LOW only while reading the external ADC.
+    setSensorPowerEnabled(true);
+    delay(50);
     readings.adsOk = ads1115Ready;
 
+    // If the ADC was missing at boot, retry before giving up on this wake cycle.
     if (!ads1115Ready) {
         SerialMon.println("ADS1115 not ready. Retrying scan...");
         readings.adsOk = beginAds1115();
@@ -237,5 +250,6 @@ SensorReadings readSensors()
         }
     }
 
+    setSensorPowerEnabled(false);
     return readings;
 }

@@ -13,7 +13,11 @@ const uint32_t MQTT_RECONNECT_INTERVAL_MS = 10000UL;
 const uint32_t PUBLISH_INTERVAL_MS = 15000UL;
 const uint32_t GPS_REFRESH_INTERVAL_MS = 15000UL;
 const uint32_t MQTT_CONNECT_WAIT_MS = 60000UL;
+// Main duty-cycle timer: after one publish attempt, sleep for 5 minutes.
 const uint64_t DEEP_SLEEP_INTERVAL_US = 5ULL * 60ULL * 1000000ULL;
+
+// Firmware version format is X.YZ: major, minor, correction.
+const char FIRMWARE_VERSION[] = "1.01";
 
 const char GSM_PIN[] = "";
 const char APN[] = "internet";
@@ -27,6 +31,7 @@ const size_t MQTT_BUFFER_SIZE = 1024;
 const size_t TELEMETRY_PAYLOAD_SIZE = 768;
 
 const uint8_t ADC_SAMPLE_COUNT = 8;
+// Voltage dividers lower battery/solar voltage before it reaches ESP32 ADC pins.
 const float BATTERY_DIVIDER_RATIO = 2.0f;
 const float SOLAR_DIVIDER_RATIO = 2.0f;
 const uint16_t BATTERY_EMPTY_MV = 3300;
