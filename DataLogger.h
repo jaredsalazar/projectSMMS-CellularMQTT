@@ -49,6 +49,7 @@ bool beginSdLogger()
 bool appendMeasurementToSd(const SensorReadings &sensors, const GpsFix &gps, int rssi)
 {
     if (!sdReady) {
+        SerialMon.println("SD logger not ready; measurement was not saved to SD.");
         return false;
     }
 

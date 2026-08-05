@@ -17,7 +17,7 @@ void configureBoardPins()
 #endif
 
 #ifdef BOARD_SENSOR_POWER_EN_PIN
-    // Sensors get their own active-low switched rail so deep sleep can save power.
+    // Sensors get their own active-high switched rail so deep sleep can save power.
     gpio_hold_dis(static_cast<gpio_num_t>(BOARD_SENSOR_POWER_EN_PIN));
     pinMode(BOARD_SENSOR_POWER_EN_PIN, OUTPUT);
     digitalWrite(BOARD_SENSOR_POWER_EN_PIN, !BOARD_SENSOR_POWER_EN_LEVEL);
@@ -65,7 +65,7 @@ void setSensorPowerEnabled(bool enabled)
 void holdSensorPowerOffDuringSleep()
 {
 #ifdef BOARD_SENSOR_POWER_EN_PIN
-    // Hold the active-low sensor rail HIGH during deep sleep so external sensors stay off.
+    // Hold the active-high sensor rail LOW during deep sleep so external sensors stay off.
     digitalWrite(BOARD_SENSOR_POWER_EN_PIN, !BOARD_SENSOR_POWER_EN_LEVEL);
     gpio_hold_en(static_cast<gpio_num_t>(BOARD_SENSOR_POWER_EN_PIN));
     gpio_deep_sleep_hold_en();

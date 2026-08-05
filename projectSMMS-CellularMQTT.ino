@@ -28,7 +28,12 @@ bool publishOnce()
     const GpsFix gps = modemReady ? readGpsFix() : lastGpsFix;
     const int rssi = modemReady ? readRssi() : -999;
     const char *payload = buildTelemetryPayload(sensors, gps, rssi);
+
+    // Keep the sensor rail HIGH during SD writes in case the SD module shares it.
+    setSensorPowerEnabled(true);
+    delay(20);
     appendMeasurementToSd(sensors, gps, rssi);
+    setSensorPowerEnabled(false);
 
     if (!modemReady) {
         SerialMon.println("Modem not ready; measurement was logged but not sent.");
@@ -79,7 +84,6 @@ void setup()
     buildDeviceIdentity();
     SerialMon.print("Device ID: ");
     SerialMon.println(deviceId);
-    beginSdLogger();
 
     // Bring up board rails first, then sensors, then the modem/network stack.
     configureBoardPins();
@@ -87,6 +91,7 @@ void setup()
     configureAnalogInputs();
     setSensorPowerEnabled(true);
     delay(50);
+    beginSdLogger();
     beginAds1115();
     setSensorPowerEnabled(false);
 

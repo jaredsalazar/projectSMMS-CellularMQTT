@@ -17,7 +17,7 @@ const uint32_t MQTT_CONNECT_WAIT_MS = 60000UL;
 const uint64_t DEEP_SLEEP_INTERVAL_US = 5ULL * 60ULL * 1000000ULL;
 
 // Firmware version format is X.YZ: major, minor, correction.
-const char FIRMWARE_VERSION[] = "1.01";
+const char FIRMWARE_VERSION[] = "1.03";
 
 const char GSM_PIN[] = "";
 const char APN[] = "internet";
